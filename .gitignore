@@ -1,0 +1,12 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.venv/
+qa/
+private/
+PROJECT_STATE.md
+examples/lock.json
+examples/receipt.json
+examples/summary.json

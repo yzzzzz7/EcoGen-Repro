@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "project": "synthetic-demo-only",
+  "method": {"name": "synthetic-file-summary", "version": "1"},
+  "parameters": {"seed": 42},
+  "inputs": [
+    {"id": "final_vcf", "path": "final.vcf", "format": "vcf"},
+    {"id": "selected_samples", "path": "samples.txt", "format": "samples"},
+    {"id": "analysis_code", "path": "summarize.py", "format": "file"}
+  ],
+  "sample_scope": {"vcf": "final_vcf", "samples": "selected_samples", "mode": "exact"}
+}
