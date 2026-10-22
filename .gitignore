@@ -6,7 +6,9 @@ dist/
 .venv/
 qa/
 private/
+归档/
 PROJECT_STATE.md
 examples/lock.json
 examples/receipt.json
 examples/summary.json
+examples/report.html

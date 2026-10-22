@@ -2,9 +2,11 @@
 
 **Catch stale research results before they enter the next analysis.**
 
+[简体中文](README.zh-CN.md) · [Release downloads](https://github.com/yzzzzz7/EcoGen-Repro/releases) · [Observed validation](docs/VALIDATION.md)
+
 EcoGen-Repro is a small command-line tool that binds a research run to its declared input files, parameters, analysis scripts, and sample scope. It checks those inputs before and after an explicit command and records hashes of newly produced outputs.
 
-Status: **0.1.0 alpha**. The public examples use synthetic data. External adoption, large-file benchmarks, and scientific validation are not established.
+Status: **0.2.0 alpha**. The public examples use synthetic data. External adoption, large-file benchmarks, and scientific validation are not established.
 
 ## The problem
 
@@ -23,6 +25,22 @@ EcoGen-Repro provides a small provenance gate that can be added to an existing s
 
 All core operations use the Python standard library. No API key, cloud account, or network connection is required at runtime.
 
+## Two-minute walkthrough
+
+After installation, run:
+
+```sh
+ecogen-repro demo --out my-demo
+```
+
+Use a new or empty directory with an existing parent. The command creates synthetic inputs, runs a small example, and exercises six expected outcomes: an unchanged run passes; changed VCF content, sample order, parameters, and outputs are rejected; restored files pass again. It restores the original synthetic files before it finishes.
+
+Open `my-demo/report.html` in a browser to see the verified run's inputs, sample scope, parameters, command, and output hashes. `my-demo/demo-results.json` contains the six observed software-check outcomes. Both files are generated locally and work offline. Expected rejections mean that the software detected the intended changes; they are not biological validation.
+
+The walkthrough works from the installed wheel without a repository checkout. If it fails, its working files remain for inspection; choose a new destination after resolving the failure.
+
+![Example of a generated verification report](docs/report-preview.png)
+
 ## Install
 
 Python 3.10 or later is required. From a checkout:
@@ -31,6 +49,8 @@ Python 3.10 or later is required. From a checkout:
 python -m pip install .
 ecogen-repro --version
 ```
+
+Alternatively, download the `.whl` file from [Releases](https://github.com/yzzzzz7/EcoGen-Repro/releases) and install it with `python -m pip install /path/to/the-downloaded.whl`. No PyPI publication is claimed.
 
 Without installation, use `python -m ecogen_repro` from the repository root. The commands below use that form. Package installation requires setuptools; it is a build dependency, not a runtime dependency.
 
@@ -43,6 +63,7 @@ python -m ecogen_repro lock examples/config.json --out examples/lock.json
 python -m ecogen_repro check examples/lock.json
 python -m ecogen_repro run examples/lock.json --output summary.json --receipt examples/receipt.json -- python summarize.py
 python -m ecogen_repro verify examples/receipt.json
+python -m ecogen_repro report examples/receipt.json --out examples/report.html
 ```
 
 Each successful command prints a JSON object with `"status": "PASS"` and exits with code 0. A failed check prints an error and exits with code 1. The demonstration writes `examples/summary.json`; it is a synthetic I/O summary, not an estimator.
@@ -70,6 +91,16 @@ Start from [examples/config.json](examples/config.json). Give the project its ac
 
 For existing R, Python, or command-line analyses, replace `python summarize.py` with the actual trusted command. List every expected new output with a separate `--output`. The command receives arguments directly, without an intermediate shell. A scheduler can invoke the same CLI inside its existing job script; EcoGen-Repro does not submit jobs itself.
 
+## Export a readable verification report
+
+```sh
+ecogen-repro report /path/to/receipt.json --out report.html
+```
+
+This checks the current inputs and outputs first, then writes a self-contained HTML report. Stale or missing files prevent a PASS report from being created. Existing report files are preserved. Reports contain no scripts or external assets, and text supplied in the configuration is HTML-escaped.
+
+The report describes the check at its recorded timestamp. Later changes do not automatically update an exported HTML file. Keep the configuration, input files, lock and receipt together so a recipient can run `verify` again. Review paths, sample IDs and command arguments before sharing a report.
+
 ## Scope and interpretation
 
 Passing means that declared files matched a lock at the observed checks and that a successful command produced the recorded output files. It does not establish scientific validity or prove that the command used every declared input.
@@ -91,7 +122,7 @@ Passing means that declared files matched a lock at the observed checks and that
 python -m unittest discover -s tests -v
 ```
 
-Tests exercise provenance drift, changed sample order, documented subsets, compressed VCF headers, failed commands, stale output rejection, receipt invalidation, and relocation of a complete project. The GitHub Actions workflow requests Python 3.10, 3.12, and 3.13 on Linux and Windows; workflow configuration alone is not evidence that those runs passed.
+Tests exercise provenance drift, changed sample order, documented subsets, compressed VCF headers, failed commands, stale output rejection, receipt invalidation, relocation, report escaping, and the installed walkthrough. The GitHub Actions workflow requests Python 3.10, 3.12, and 3.13 on Linux and Windows. It runs the installed walkthrough outside the source directory; observed outcomes are recorded separately.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md), [docs/FORMAT.md](docs/FORMAT.md), and [ROADMAP.md](ROADMAP.md). Bug reports with small synthetic reproductions are welcome.
 

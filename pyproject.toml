@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ecogen-repro"
-version = "0.1.0"
+version = "0.2.0"
 description = "Input and sample provenance gates for research pipelines"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -19,6 +19,11 @@ classifiers = [
 
 [project.scripts]
 ecogen-repro = "ecogen_repro.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/yzzzzz7/EcoGen-Repro"
+Documentation = "https://github.com/yzzzzz7/EcoGen-Repro/blob/main/README.md"
+Issues = "https://github.com/yzzzzz7/EcoGen-Repro/issues"
 
 [tool.setuptools.packages.find]
 include = ["ecogen_repro*"]

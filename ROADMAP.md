@@ -15,3 +15,9 @@
 - Improve environment/version capture with explicit, reviewable commands.
 
 These are plans, not completed validation, adoption, or funding commitments.
+
+## Implemented in 0.2.0 alpha
+
+- Installed-package offline walkthrough with expected drift rejections.
+- HTML verification reports and full Chinese quickstart documentation.
+- Installed-package demo and report checks in the CI matrix.

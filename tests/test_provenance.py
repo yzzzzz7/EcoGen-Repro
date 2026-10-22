@@ -13,6 +13,8 @@ from ecogen_repro.core import (
     ReproError, check, freeze, guarded_run, read_json, snapshot,
     verify_receipt, vcf_samples,
 )
+from ecogen_repro.demo import run_demo as run_walkthrough
+from ecogen_repro.report import write_report
 
 
 VCF = ("##fileformat=VCFv4.2\n"
@@ -234,6 +236,84 @@ class ProvenanceTests(unittest.TestCase):
     def test_cli_failure_exit_code(self):
         with contextlib.redirect_stderr(io.StringIO()):
             self.assertEqual(main(["check", str(self.lock)]), 1)
+
+    def test_report_verifies_and_escapes_user_content(self):
+        self.spec["project"] = '<script>alert("project")</script>'
+        self.save_spec()
+        freeze(self.config, self.lock)
+        self.run_demo()
+        report = self.root / "report.html"
+        write_report(self.receipt, report)
+        text = report.read_text(encoding="utf-8")
+        self.assertIn("PASS — provenance verified", text)
+        self.assertIn("&lt;script&gt;", text)
+        self.assertNotIn("<script>", text)
+        self.assertIn("Content-Security-Policy", text)
+        self.assertIn("S1\nS2", text)
+
+    def test_report_rejects_stale_run_without_writing(self):
+        freeze(self.config, self.lock)
+        self.run_demo()
+        (self.root / "result.txt").write_text("changed")
+        report = self.root / "report.html"
+        with self.assertRaisesRegex(ReproError, "Output changed"):
+            write_report(self.receipt, report)
+        self.assertFalse(report.exists())
+
+    def test_report_never_overwrites_existing_file(self):
+        freeze(self.config, self.lock)
+        self.run_demo()
+        report = self.root / "report.html"
+        report.write_text("user-owned content")
+        with self.assertRaises(FileExistsError):
+            write_report(self.receipt, report)
+        self.assertEqual(report.read_text(), "user-owned content")
+
+    def test_report_without_sample_scope(self):
+        self.spec.pop("sample_scope")
+        self.save_spec()
+        freeze(self.config, self.lock)
+        self.run_demo()
+        report = self.root / "report.html"
+        write_report(self.receipt, report)
+        self.assertIn("No sample-scope check was declared", report.read_text(encoding="utf-8"))
+
+    def test_walkthrough_rejects_drift_and_restores_its_files(self):
+        directory = self.root / "walkthrough"
+        result = run_walkthrough(directory)
+        self.assertEqual(result["cases_passed"], 6)
+        cases = read_json(directory / "demo-results.json")["cases"]
+        self.assertEqual(len(cases), 6)
+        self.assertEqual(sum(row["observed"] == "REJECT" for row in cases), 4)
+        self.assertTrue(all(row["expected"] == row["observed"] for row in cases))
+        verify_receipt(directory / "receipt.json")
+        self.assertTrue((directory / "report.html").is_file())
+
+    def test_walkthrough_refuses_nonempty_directory(self):
+        original = self.config.read_bytes()
+        with self.assertRaisesRegex(ReproError, "new or empty"):
+            run_walkthrough(self.root)
+        self.assertEqual(self.config.read_bytes(), original)
+
+    def test_cli_walkthrough_and_report(self):
+        directory = self.root / "walkthrough"
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            self.assertEqual(main(["demo", "--out", str(directory)]), 0)
+            self.assertEqual(main(["report", str(directory / "receipt.json"),
+                                   "--out", str(directory / "second-report.html")]), 0)
+        records = [json.loads(line) for line in output.getvalue().splitlines()]
+        self.assertEqual(records[0]["cases_passed"], 6)
+        self.assertTrue(Path(records[1]["report"]).is_file())
+
+    def test_truncated_gzip_has_structured_cli_error(self):
+        (self.root / "final.vcf.gz").write_bytes(gzip.compress(VCF.encode())[:8])
+        self.spec["inputs"][0]["path"] = "final.vcf.gz"
+        self.save_spec()
+        error = io.StringIO()
+        with contextlib.redirect_stderr(error):
+            self.assertEqual(main(["lock", str(self.config), "--out", str(self.lock)]), 1)
+        self.assertEqual(json.loads(error.getvalue())["status"], "FAIL")
 
 
 if __name__ == "__main__":
