@@ -95,6 +95,8 @@ Tests exercise provenance drift, changed sample order, documented subsets, compr
 
 See [CONTRIBUTING.md](CONTRIBUTING.md), [docs/FORMAT.md](docs/FORMAT.md), and [ROADMAP.md](ROADMAP.md). Bug reports with small synthetic reproductions are welcome.
 
+The initial release's observed local and CI results are recorded in [docs/VALIDATION.md](docs/VALIDATION.md).
+
 ## License
 
 MIT. All bundled example data are synthetic and distributed under the same license. This repository contains newly written software and does not redistribute data or code from the separate panda manuscript repository.
